@@ -39,11 +39,11 @@ def main(num_layers_override=None):
     else:
         NUM_LAYERS = 5
     
-    NUM_QUBITS   = 2
+    NUM_QUBITS   = 6
     NUM_PARAMETERS = (NUM_QUBITS * 4) * NUM_LAYERS
 
     IMAGE_SIZE   = int(2 ** (NUM_QUBITS / 2))
-    BATCH_SIZE   = 2
+    BATCH_SIZE   = 8
     EPOCHS       = 100
     LEARNING_RATE = 0.001
     ACTIVATION = "ReLU"
@@ -53,7 +53,7 @@ def main(num_layers_override=None):
 
     OPTIMIZER_NAME = "Adam"
     LOSS_FUNCTION_NAME = "L1Loss"
-    BACKEND_NAME = "default.mixed"
+    BACKEND_NAME = "lightning.gpu" #"default.mixed"
     GRADIENT_NAME = "Backprop_PL"
     SCHEDULER_NAME = "ReduceLROnPlateau"
 
@@ -62,9 +62,10 @@ def main(num_layers_override=None):
 
     SCHEDULER_FACTOR   = 0.5 
     SCHEDULER_PATIENCE = 5
-    LOG_FREQ      = 1
+    LOG_FREQ      = 100
 
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_dir   = os.path.join("runs", f"run_{timestamp}")
@@ -168,7 +169,7 @@ def main(num_layers_override=None):
     history       = {"train_loss": [], "val_loss": [], "learning_rate": []}
     total_start_time = time.time()
 
-    PROFILING_ENABLED = True
+    PROFILING_ENABLED = False
     profiling_batches = 1
     profiler = None
 
@@ -179,7 +180,7 @@ def main(num_layers_override=None):
 
         if PROFILING_ENABLED and profiler is None:
             profiler = profile(
-                activities=[ProfilerActivity.CPU],
+                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
                 record_shapes=True,
                 profile_memory=False,
                 with_stack=False,
